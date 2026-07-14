@@ -75,9 +75,10 @@ echo "==> Source height: ${SRC_HEIGHT}p, duration: ${SRC_DUR}s (${RUNTIME_MIN}m)
 # 1080p: 5000k video, 192k audio    720p: 2800k / 128k    480p: 1400k / 96k
 declare -A V_BITRATE=( [1080p]=5000k [720p]=2800k [480p]=1400k )
 declare -A A_BITRATE=( [1080p]=192k  [720p]=128k  [480p]=96k  )
-declare -A HEIGHT   =( [1080p]=1080  [720p]=720   [480p]=480  )
+declare -A HEIGHT=(    [1080p]=1080  [720p]=720   [480p]=480  )
 declare -A BANDWIDTH=( [1080p]=5500000 [720p]=3200000 [480p]=1600000 )
-declare -A RES      =( [1080p]=1920x1080 [720p]=1280x720 [480p]=854x480 )
+declare -A RES=(       [1080p]=1920x1080 [720p]=1280x720 [480p]=854x480 )
+
 
 BUILT=()
 for R in $RENDITIONS; do
