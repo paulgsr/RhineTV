@@ -26,7 +26,7 @@ export function SiteHeader() {
           className="flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground"
           onClick={() => setOpen(false)}
         >
-          <Film className="h-5 w-5 text-primary" />
+          <img src="/favicon.png" alt="" width={24} height={24} className="h-6 w-6 rounded-sm" />
           <span>RhineTV</span>
         </Link>
         <nav className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">

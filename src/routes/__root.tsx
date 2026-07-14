@@ -81,14 +81,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "A self-hosted Jellyfin alternative that streams your movies as pre-segmented HLS chunks for smooth playback anywhere.",
+          "RhineTV is a self-hosted Jellyfin alternative that streams your movies as pre-segmented HLS chunks for smooth playback anywhere.",
       },
       { name: "robots", content: "noindex,nofollow" },
       { property: "og:title", content: "RhineTV" },
       {
         property: "og:description",
         content:
-          "Self-hosted HLS movie streaming for you and a few friends.",
+          "Self-hosted HLS movie streaming for you and a few friends, from the banks of the Rhine.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
