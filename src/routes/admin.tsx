@@ -6,7 +6,7 @@ import { Terminal } from "lucide-react";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin — ChunkFlix" },
+      { title: "Admin — RhineTV" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

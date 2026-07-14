@@ -77,18 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ChunkFlix — Self-hosted HLS movie library" },
+      { title: "RhineTV — Self-hosted HLS movie library" },
       {
         name: "description",
         content:
-          "A self-hosted Jellyfin alternative that streams your movies as pre-segmented HLS chunks for smooth playback anywhere.",
+          "RhineTV is a self-hosted Jellyfin alternative that streams your movies as pre-segmented HLS chunks for smooth playback anywhere.",
       },
       { name: "robots", content: "noindex,nofollow" },
-      { property: "og:title", content: "ChunkFlix" },
+      { property: "og:title", content: "RhineTV" },
       {
         property: "og:description",
         content:
-          "Self-hosted HLS movie streaming for you and a few friends.",
+          "Self-hosted HLS movie streaming for you and a few friends, from the banks of the Rhine.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -98,7 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,

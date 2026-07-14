@@ -10,7 +10,7 @@ import { Loader2, Plus, Search, Check, AlertTriangle } from "lucide-react";
 export const Route = createFileRoute("/discover")({
   head: () => ({
     meta: [
-      { title: "Discover — ChunkFlix" },
+      { title: "Discover — RhineTV" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -93,7 +93,7 @@ function DiscoverPage() {
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight">Discover</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Search anything and request it. Once it's available, ChunkFlix picks
+          Search anything and request it. Once it's available, RhineTV picks
           it up automatically.
         </p>
 

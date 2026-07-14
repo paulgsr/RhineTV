@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Film, Search, Shield, Compass, Inbox, Menu, X } from "lucide-react";
+import { Search, Shield, Compass, Inbox, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const navLinks: Array<{
@@ -26,8 +26,8 @@ export function SiteHeader() {
           className="flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground"
           onClick={() => setOpen(false)}
         >
-          <Film className="h-5 w-5 text-primary" />
-          <span>ChunkFlix</span>
+          <img src="/favicon.png" alt="" width={24} height={24} className="h-6 w-6 rounded-sm" />
+          <span>RhineTV</span>
         </Link>
         <nav className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
           {navLinks.map((l) => {

@@ -7,7 +7,7 @@ import { allMovies } from "@/data/library";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ChunkFlix — Your Library" },
+      { title: "RhineTV — Your Library" },
       {
         name: "description",
         content:

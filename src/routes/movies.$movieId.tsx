@@ -14,7 +14,7 @@ export const Route = createFileRoute("/movies/$movieId")({
     if (!m) return { meta: [{ title: "Not found" }] };
     return {
       meta: [
-        { title: `${m.title} (${m.year}) — ChunkFlix` },
+        { title: `${m.title} (${m.year}) — RhineTV` },
         { name: "description", content: m.overview },
         { name: "robots", content: "noindex,nofollow" },
         { property: "og:title", content: `${m.title} (${m.year})` },
