@@ -1,11 +1,20 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site-header";
-import { getMovie } from "@/data/library";
+import { getLibraryMovie } from "@/lib/library.functions";
 import { Play } from "lucide-react";
 
+const movieQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["library", "movie", id],
+    queryFn: () => getLibraryMovie({ data: { id } }),
+  });
+
 export const Route = createFileRoute("/movies/$movieId")({
-  loader: ({ params }) => {
-    const movie = getMovie(params.movieId);
+  loader: async ({ params, context }) => {
+    const movie = await context.queryClient.ensureQueryData(
+      movieQuery(params.movieId),
+    );
     if (!movie) throw notFound();
     return { movie };
   },
@@ -14,12 +23,17 @@ export const Route = createFileRoute("/movies/$movieId")({
     if (!m) return { meta: [{ title: "Not found" }] };
     return {
       meta: [
-        { title: `${m.title} (${m.year}) — RhineTV` },
-        { name: "description", content: m.overview },
+        { title: `${m.title}${m.year ? ` (${m.year})` : ""} — RhineTV` },
+        { name: "description", content: m.overview || m.title },
         { name: "robots", content: "noindex,nofollow" },
-        { property: "og:title", content: `${m.title} (${m.year})` },
-        { property: "og:description", content: m.overview },
-        { property: "og:image", content: m.backdropUrl },
+        {
+          property: "og:title",
+          content: `${m.title}${m.year ? ` (${m.year})` : ""}`,
+        },
+        { property: "og:description", content: m.overview || m.title },
+        ...(m.backdropUrl
+          ? [{ property: "og:image", content: m.backdropUrl }]
+          : []),
         { property: "og:type", content: "video.movie" },
       ],
     };
@@ -59,7 +73,9 @@ export const Route = createFileRoute("/movies/$movieId")({
 });
 
 function MovieDetail() {
-  const { movie } = Route.useLoaderData();
+  const { movieId } = Route.useParams();
+  const { data: movie } = useSuspenseQuery(movieQuery(movieId));
+  if (!movie) return null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -67,33 +83,46 @@ function MovieDetail() {
 
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img
-            src={movie.backdropUrl}
-            alt=""
-            className="h-full w-full object-cover opacity-40"
-          />
+          {movie.backdropUrl && (
+            <img
+              src={movie.backdropUrl}
+              alt=""
+              className="h-full w-full object-cover opacity-40"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/30" />
         </div>
 
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:grid-cols-[220px_1fr] sm:px-6 sm:py-24">
-          <img
-            src={movie.posterUrl}
-            alt={`${movie.title} poster`}
-            className="hidden w-[220px] rounded-lg shadow-2xl ring-1 ring-border/60 sm:block"
-          />
+          {movie.posterUrl && (
+            <img
+              src={movie.posterUrl}
+              alt={`${movie.title} poster`}
+              className="hidden w-[220px] rounded-lg shadow-2xl ring-1 ring-border/60 sm:block"
+            />
+          )}
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-primary/80">
-              {movie.genres.join(" · ")}
-            </p>
+            {movie.genres.length > 0 && (
+              <p className="text-xs uppercase tracking-[0.2em] text-primary/80">
+                {movie.genres.join(" · ")}
+              </p>
+            )}
             <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
               {movie.title}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {movie.year} · {movie.runtimeMin} min
+              {[
+                movie.year,
+                movie.runtimeMin ? `${movie.runtimeMin} min` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
-            <p className="mt-6 max-w-2xl text-sm leading-relaxed text-foreground/90 sm:text-base">
-              {movie.overview}
-            </p>
+            {movie.overview && (
+              <p className="mt-6 max-w-2xl text-sm leading-relaxed text-foreground/90 sm:text-base">
+                {movie.overview}
+              </p>
+            )}
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 to="/watch/$movieId"

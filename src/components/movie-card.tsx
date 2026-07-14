@@ -1,9 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import type { Movie } from "@/data/library";
 import { getProgress, watchedFraction } from "@/lib/progress";
 import { useEffect, useState } from "react";
 
-export function MovieCard({ movie }: { movie: Movie }) {
+export type MovieCardData = {
+  id: string;
+  title: string;
+  year: number | null;
+  runtimeMin: number | null;
+  posterUrl: string | null;
+};
+
+export function MovieCard({ movie }: { movie: MovieCardData }) {
+
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
@@ -18,7 +26,7 @@ export function MovieCard({ movie }: { movie: Movie }) {
     >
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-gradient-to-br from-muted to-background">
         <img
-          src={movie.posterUrl}
+          src={movie.posterUrl ?? undefined}
           alt={`${movie.title} poster`}
           loading="lazy"
           onError={(e) => {
@@ -32,6 +40,7 @@ export function MovieCard({ movie }: { movie: Movie }) {
             {movie.title}
           </span>
         </div>
+
         {pct > 2 && (
           <div className="absolute inset-x-0 bottom-0 h-1 bg-black/50">
             <div
@@ -47,8 +56,11 @@ export function MovieCard({ movie }: { movie: Movie }) {
           {movie.title}
         </h3>
         <p className="text-xs text-muted-foreground">
-          {movie.year} · {movie.runtimeMin}m
+          {[movie.year, movie.runtimeMin ? `${movie.runtimeMin}m` : null]
+            .filter(Boolean)
+            .join(" · ") || "—"}
         </p>
+
       </div>
     </Link>
   );
