@@ -108,28 +108,23 @@ function AdminPage() {
           </div>
         )}
 
-        <section className="mt-10 rounded-lg border border-border/60 bg-card p-6">
-          <div className="flex items-center gap-2 text-sm font-medium">
+        <EncoderPanel />
+
+        <details className="mt-6 rounded-lg border border-border/60 bg-card p-6 text-sm">
+          <summary className="flex cursor-pointer items-center gap-2 font-medium">
             <Terminal className="h-4 w-4 text-primary" />
-            Prep a movie on TrueNAS
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Run the prep script on your NAS to turn a source file into HLS
-            chunks the player can stream:
+            Prefer the CLI? Prep manually
+          </summary>
+          <p className="mt-3 text-muted-foreground">
+            You can also run <code className="rounded bg-muted px-1">scripts/prep-movie.sh</code>{" "}
+            on any host with ffmpeg to produce the same layout:
           </p>
           <pre className="mt-3 overflow-x-auto rounded-md bg-black/60 p-4 text-xs leading-relaxed text-emerald-300">
-{`# On TrueNAS — inside MEDIA_ROOT
-./prep-movie.sh "/mnt/tank/media/raw/Inception (2010).mkv"
-
-# Produces (folder name -> movie id):
-# $MEDIA_ROOT/Inception (2010)/
-#   master.m3u8
-#   1080p/index.m3u8, seg00001.ts ...
-#   720p/... 480p/...
-#   subs/en.vtt
-#   metadata.json   (optional, overrides TMDB lookup)`}
+{`./prep-movie.sh "/mnt/tank/media/raw/Inception (2010).mkv"
+# → $MEDIA_ROOT/Inception (2010)/{master.m3u8, 1080p/, 720p/, ...}`}
           </pre>
-        </section>
+        </details>
+
 
         <section className="mt-10">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
