@@ -172,3 +172,152 @@ function AdminPage() {
     </div>
   );
 }
+
+function EncoderPanel() {
+  const qc = useQueryClient();
+  const { data: status } = useQuery(encoderQuery);
+  const rescan = useMutation({
+    mutationFn: () => rescanInbox(),
+    onSuccess: (s) => qc.setQueryData(encoderQuery.queryKey, s),
+  });
+  const clear = useMutation({
+    mutationFn: () => clearEncoderHistory(),
+    onSuccess: (s) => qc.setQueryData(encoderQuery.queryKey, s),
+  });
+
+  if (!status) {
+    return (
+      <div className="mt-10 rounded-lg border border-border/60 bg-card p-6 text-sm text-muted-foreground">
+        Loading encoder status…
+      </div>
+    );
+  }
+
+  const active = status.jobs.filter(
+    (j) => j.status !== "done" && j.status !== "failed",
+  );
+  const finished = status.jobs.filter(
+    (j) => j.status === "done" || j.status === "failed",
+  );
+
+  return (
+    <section className="mt-10 rounded-lg border border-border/60 bg-card p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold">Auto-encoder</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Drop a video file into <code className="rounded bg-muted px-1">$INBOX_ROOT</code>{" "}
+            and it's re-encoded to HLS and added to the library automatically.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => rescan.mutate()}
+            disabled={rescan.isPending}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs hover:bg-accent disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`h-3 w-3 ${rescan.isPending ? "animate-spin" : ""}`}
+            />
+            Scan inbox
+          </button>
+          {finished.length > 0 && (
+            <button
+              onClick={() => clear.mutate()}
+              className="rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs hover:bg-accent"
+            >
+              Clear history
+            </button>
+          )}
+        </div>
+      </div>
+
+      {!status.configured && (
+        <div className="mt-4 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3 text-xs text-muted-foreground">
+          Set <code className="rounded bg-muted px-1">INBOX_ROOT</code> and{" "}
+          <code className="rounded bg-muted px-1">MEDIA_ROOT</code> in your
+          container env, then mount your raw-files folder read-write at the
+          inbox path.
+        </div>
+      )}
+      {status.configured && !status.available && (
+        <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/5 p-3 text-xs text-muted-foreground">
+          ffmpeg not available in this runtime. In the Lovable preview this is
+          expected — auto-encoding only runs inside the Docker container on
+          your NAS.
+        </div>
+      )}
+      {status.lastScanError && (
+        <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/5 p-3 text-xs text-muted-foreground">
+          Last scan error: {status.lastScanError}
+        </div>
+      )}
+
+      {status.jobs.length === 0 ? (
+        <p className="mt-4 rounded-md border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+          Inbox is empty. Drop videos into <code>$INBOX_ROOT</code> to get started.
+        </p>
+      ) : (
+        <ul className="mt-4 divide-y divide-border/50 rounded-md border border-border/60">
+          {[...active, ...finished].map((j) => (
+            <li key={j.id} className="px-4 py-3 text-sm">
+              <div className="flex items-center gap-3">
+                <JobIcon status={j.status} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{j.sourceName}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {jobLabel(j.status)}
+                    {j.currentRendition && ` · ${j.currentRendition}`}
+                    {j.error && ` · ${j.error}`}
+                  </p>
+                </div>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {Math.round(j.progress * 100)}%
+                </span>
+              </div>
+              {j.status !== "done" && j.status !== "failed" && (
+                <div className="mt-2 h-1 overflow-hidden rounded bg-muted">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${Math.max(2, j.progress * 100)}%` }}
+                  />
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function JobIcon({ status }: { status: string }) {
+  if (status === "done")
+    return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
+  if (status === "failed") return <XCircle className="h-4 w-4 text-red-400" />;
+  if (status === "queued")
+    return <Clock className="h-4 w-4 text-muted-foreground" />;
+  return <Loader2 className="h-4 w-4 animate-spin text-primary" />;
+}
+
+function jobLabel(status: string): string {
+  switch (status) {
+    case "queued":
+      return "Queued";
+    case "probing":
+      return "Probing source";
+    case "encoding":
+      return "Encoding";
+    case "writing-master":
+      return "Writing master playlist";
+    case "fetching-metadata":
+      return "Fetching metadata";
+    case "done":
+      return "Done";
+    case "failed":
+      return "Failed";
+    default:
+      return status;
+  }
+}
+
