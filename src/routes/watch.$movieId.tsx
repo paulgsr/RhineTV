@@ -1,11 +1,20 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { getMovie } from "@/data/library";
+import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { getLibraryMovie } from "@/lib/library.functions";
 import { HlsPlayer } from "@/components/hls-player";
 import { ArrowLeft } from "lucide-react";
 
+const movieQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["library", "movie", id],
+    queryFn: () => getLibraryMovie({ data: { id } }),
+  });
+
 export const Route = createFileRoute("/watch/$movieId")({
-  loader: ({ params }) => {
-    const movie = getMovie(params.movieId);
+  loader: async ({ params, context }) => {
+    const movie = await context.queryClient.ensureQueryData(
+      movieQuery(params.movieId),
+    );
     if (!movie) throw notFound();
     return { movie };
   },
@@ -38,7 +47,9 @@ export const Route = createFileRoute("/watch/$movieId")({
 });
 
 function WatchPage() {
-  const { movie } = Route.useLoaderData();
+  const { movieId } = Route.useParams();
+  const { data: movie } = useSuspenseQuery(movieQuery(movieId));
+  if (!movie) return null;
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
@@ -52,8 +63,8 @@ function WatchPage() {
           Back
         </Link>
         <h1 className="ml-2 truncate text-sm font-medium">
-          {movie.title}{" "}
-          <span className="text-white/50">({movie.year})</span>
+          {movie.title}
+          {movie.year && <span className="text-white/50"> ({movie.year})</span>}
         </h1>
       </header>
 
@@ -62,7 +73,7 @@ function WatchPage() {
           <HlsPlayer
             src={movie.hlsUrl}
             movieId={movie.id}
-            poster={movie.backdropUrl}
+            poster={movie.backdropUrl ?? undefined}
           />
         </div>
       </div>
