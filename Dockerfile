@@ -28,7 +28,6 @@ ENV HOST=0.0.0.0
 # Without these the "auto-encode inbox" feature disables itself gracefully.
 RUN apk add --no-cache ffmpeg
 
-ENV HOST=0.0.0.0
 
 # Copy the Nitro node-server output. Everything the server needs is bundled
 # inside .output; we don't ship node_modules or source.
