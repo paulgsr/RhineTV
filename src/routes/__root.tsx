@@ -77,14 +77,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "ChunkFlix — Self-hosted HLS movie library" },
+      {
+        name: "description",
+        content:
+          "A self-hosted Jellyfin alternative that streams your movies as pre-segmented HLS chunks for smooth playback anywhere.",
+      },
+      { name: "robots", content: "noindex,nofollow" },
+      { property: "og:title", content: "ChunkFlix" },
+      {
+        property: "og:description",
+        content:
+          "Self-hosted HLS movie streaming for you and a few friends.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -102,7 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
