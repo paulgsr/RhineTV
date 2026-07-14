@@ -29,7 +29,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 export const Route = createFileRoute("/admin/requests")({
   head: () => ({
     meta: [
-      { title: "Requests — ChunkFlix Admin" },
+      { title: "Requests — RhineTV Admin" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

@@ -27,7 +27,7 @@ export function SiteHeader() {
           onClick={() => setOpen(false)}
         >
           <Film className="h-5 w-5 text-primary" />
-          <span>ChunkFlix</span>
+          <span>RhineTV</span>
         </Link>
         <nav className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
           {navLinks.map((l) => {

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/watch/$movieId")({
     meta: [
       {
         title: loaderData?.movie
-          ? `Watching ${loaderData.movie.title} — ChunkFlix`
+          ? `Watching ${loaderData.movie.title} — RhineTV`
           : "Watch",
       },
       { name: "robots", content: "noindex,nofollow" },

@@ -3,7 +3,7 @@
 // we iterate. In production this is replaced by a server function that writes
 // to the watch_progress Postgres table for the signed-in user.
 
-const KEY_PREFIX = "chunkflix:progress:";
+const KEY_PREFIX = "rhinetv:progress:";
 
 export type Progress = {
   positionSec: number;

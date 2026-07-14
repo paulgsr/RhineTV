@@ -77,14 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ChunkFlix — Self-hosted HLS movie library" },
+      { title: "RhineTV — Self-hosted HLS movie library" },
       {
         name: "description",
         content:
           "A self-hosted Jellyfin alternative that streams your movies as pre-segmented HLS chunks for smooth playback anywhere.",
       },
       { name: "robots", content: "noindex,nofollow" },
-      { property: "og:title", content: "ChunkFlix" },
+      { property: "og:title", content: "RhineTV" },
       {
         property: "og:description",
         content:
