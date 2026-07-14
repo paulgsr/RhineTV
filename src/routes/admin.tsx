@@ -45,16 +45,14 @@ function AdminPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Library scans{" "}
-              <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                {process.env.MEDIA_ROOT_DISPLAY || "$MEDIA_ROOT"}
-              </code>{" "}
+              Library scans <code className="rounded bg-muted px-1 py-0.5 text-xs">$MEDIA_ROOT</code>{" "}
               — every folder containing{" "}
               <code className="rounded bg-muted px-1 py-0.5 text-xs">
                 master.m3u8
               </code>{" "}
               becomes a movie.
             </p>
+
           </div>
           <button
             onClick={rescan}
