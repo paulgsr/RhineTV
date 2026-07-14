@@ -35,24 +35,43 @@ services:
       # encoder skips renditions taller than the source.
       RENDITIONS: "1080p 720p 480p"
       SEG_SECONDS: "6"
+      # Hardware-accelerated transcoding. Options:
+      #   nvenc  — NVIDIA GPU (e.g. GTX 1060). Also uncomment the `deploy.
+      #            resources.reservations.devices` block below and make sure
+      #            nvidia-container-toolkit is installed on the host.
+      #   qsv    — Intel iGPU QuickSync. Pass through `/dev/dri`.
+      #   vaapi  — AMD / Intel via VA-API. Pass through `/dev/dri`.
+      #   none   — CPU only (libx264). Default.
+      HWACCEL: nvenc
+      # Tell the NVIDIA runtime which GPUs + capabilities to expose.
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,video,utility
       # Optional: TMDB for auto-filled posters / overviews / runtime / genres.
       # TMDB_API_KEY: ${TMDB_API_KEY}
       # Jellyseerr integration (drives Discover + Coming soon):
       # JELLYSEERR_URL: ${JELLYSEERR_URL}
       # JELLYSEERR_API_KEY: ${JELLYSEERR_API_KEY}
+    # GPU passthrough — requires nvidia-container-toolkit on the host.
+    # TrueNAS Scale: install the "NVIDIA drivers" system app first.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video]
     volumes:
-      # HLS output — served to browsers, read-only from RhineTV's perspective
-      # once the encoder has written the files.
+      # HLS output — served to browsers. Encoder writes here.
       - /mnt/tank/media/hls:/media
       # Raw inbox — drop new movies here. Read-write so the encoder can write
       # `.processed` / `.failed` sidecar markers.
       - /mnt/tank/media/raw:/inbox
-
     # env_file:
     #   - .env
     labels:
       # Opt this container in to Watchtower updates
       com.centurylinklabs.watchtower.enable: "true"
+
 
 
   watchtower:
