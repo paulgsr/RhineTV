@@ -26,7 +26,7 @@ export function MovieCard({ movie }: { movie: MovieCardData }) {
     >
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-gradient-to-br from-muted to-background">
         <img
-          src={movie.posterUrl}
+          src={movie.posterUrl ?? undefined}
           alt={`${movie.title} poster`}
           loading="lazy"
           onError={(e) => {
@@ -40,6 +40,7 @@ export function MovieCard({ movie }: { movie: MovieCardData }) {
             {movie.title}
           </span>
         </div>
+
         {pct > 2 && (
           <div className="absolute inset-x-0 bottom-0 h-1 bg-black/50">
             <div
