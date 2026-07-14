@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Film, Search, Shield, Compass, Inbox, Menu, X } from "lucide-react";
+import { Search, Shield, Compass, Inbox, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const navLinks: Array<{
