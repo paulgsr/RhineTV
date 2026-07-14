@@ -56,8 +56,11 @@ export function MovieCard({ movie }: { movie: MovieCardData }) {
           {movie.title}
         </h3>
         <p className="text-xs text-muted-foreground">
-          {movie.year} · {movie.runtimeMin}m
+          {[movie.year, movie.runtimeMin ? `${movie.runtimeMin}m` : null]
+            .filter(Boolean)
+            .join(" · ") || "—"}
         </p>
+
       </div>
     </Link>
   );
