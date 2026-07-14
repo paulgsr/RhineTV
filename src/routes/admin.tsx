@@ -1,17 +1,35 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import {
+  useSuspenseQuery,
+  useQuery,
+  useMutation,
+  useQueryClient,
+  queryOptions,
+} from "@tanstack/react-query";
 import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { listLibrary } from "@/lib/library.functions";
-import { RefreshCw, Terminal } from "lucide-react";
+import {
+  clearEncoderHistory,
+  encoderStatus,
+  rescanInbox,
+} from "@/lib/encoder.functions";
+import { RefreshCw, Terminal, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 const libraryQuery = queryOptions({
   queryKey: ["library"],
   queryFn: () => listLibrary(),
 });
 
+const encoderQuery = queryOptions({
+  queryKey: ["encoder-status"],
+  queryFn: () => encoderStatus(),
+  refetchInterval: 2000,
+});
+
 export const Route = createFileRoute("/admin")({
   loader: ({ context }) => context.queryClient.ensureQueryData(libraryQuery),
+
   head: () => ({
     meta: [
       { title: "Admin — RhineTV" },
