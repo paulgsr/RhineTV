@@ -10,7 +10,7 @@
 
 services:
   rhinetv:
-    image: ghcr.io/CHANGE-ME/rhinetv:latest
+    image: ghcr.io/paulgsr/rhinetv:latest
     container_name: rhinetv
     restart: unless-stopped
     ports:
