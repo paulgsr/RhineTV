@@ -1,0 +1,15 @@
+node_modules
+.output
+.vite
+.cache
+dist
+build
+.git
+.github
+.env
+.env.*
+.DS_Store
+*.log
+.lovable
+.vscode
+.idea

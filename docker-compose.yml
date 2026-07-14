@@ -1,0 +1,41 @@
+# RhineTV — self-hosted stack for TrueNAS (or any Docker host)
+#
+# Pulls the pre-built image from GHCR (built by .github/workflows/docker.yml)
+# and lets Watchtower auto-update it whenever you push to `main` in GitHub.
+#
+# 1. Edit the labels below: change `ghcr.io/<your-github-user>/rhinetv` to
+#    your actual repo owner.
+# 2. Create a `.env` next to this file (see .env.example after you generate one).
+# 3. `docker compose up -d`
+
+services:
+  rhinetv:
+    image: ghcr.io/CHANGE-ME/rhinetv:latest
+    container_name: rhinetv
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      # Add your runtime secrets here (or via env_file):
+      # TMDB_API_KEY: ${TMDB_API_KEY}
+      # JELLYSEERR_URL: ${JELLYSEERR_URL}
+      # JELLYSEERR_API_KEY: ${JELLYSEERR_API_KEY}
+    # env_file:
+    #   - .env
+    labels:
+      # Opt this container in to Watchtower updates
+      com.centurylinklabs.watchtower.enable: "true"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: rhinetv-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      - --label-enable        # only touch containers with the label above
+      - --cleanup             # remove old images after updating
+      - --interval=300        # check every 5 minutes
