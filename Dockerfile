@@ -24,6 +24,11 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
 
+# ffmpeg + ffprobe power the auto-encoder worker (src/lib/encoder.server.ts).
+# Without these the "auto-encode inbox" feature disables itself gracefully.
+RUN apk add --no-cache ffmpeg
+
+
 # Copy the Nitro node-server output. Everything the server needs is bundled
 # inside .output; we don't ship node_modules or source.
 COPY --from=build /app/.output ./.output

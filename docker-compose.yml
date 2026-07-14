@@ -26,16 +26,28 @@ services:
       # (must be reachable from the browser). If RhineTV itself serves /media,
       # leave as-is; otherwise point at your nginx / caddy media host.
       PUBLIC_MEDIA_BASE_URL: /media
+      # Drop raw video files here — the auto-encoder picks them up, transcodes
+      # to HLS into MEDIA_ROOT, and marks each source with a `.processed`
+      # sidecar so it isn't re-encoded. Remove the sidecar to re-run.
+      INBOX_ROOT: /inbox
+      INBOX_POLL_MS: "30000"
+      # Which renditions to build (space-separated: 1080p 720p 480p). The
+      # encoder skips renditions taller than the source.
+      RENDITIONS: "1080p 720p 480p"
+      SEG_SECONDS: "6"
       # Optional: TMDB for auto-filled posters / overviews / runtime / genres.
       # TMDB_API_KEY: ${TMDB_API_KEY}
       # Jellyseerr integration (drives Discover + Coming soon):
       # JELLYSEERR_URL: ${JELLYSEERR_URL}
       # JELLYSEERR_API_KEY: ${JELLYSEERR_API_KEY}
     volumes:
-      # Mount your HLS-prepared movies read-only. The folder layout is:
-      #   /mnt/tank/media/hls/Inception (2010)/master.m3u8
-      #   /mnt/tank/media/hls/Sintel (2010)/master.m3u8
-      - /mnt/tank/media/hls:/media:ro
+      # HLS output — served to browsers, read-only from RhineTV's perspective
+      # once the encoder has written the files.
+      - /mnt/tank/media/hls:/media
+      # Raw inbox — drop new movies here. Read-write so the encoder can write
+      # `.processed` / `.failed` sidecar markers.
+      - /mnt/tank/media/raw:/inbox
+
     # env_file:
     #   - .env
     labels:
