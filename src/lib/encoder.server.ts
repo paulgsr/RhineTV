@@ -409,20 +409,18 @@ function buildFfmpegArgs(opts: {
   ];
 
   if (hw === "nvenc") {
-    // GTX 1060 / any NVIDIA GPU: full GPU pipeline — decode on GPU, scale on
-    // GPU, encode with NVENC. Requires nvidia-container-toolkit + a Debian-
-    // based ffmpeg built with cuda / nvenc / scale_cuda (bookworm ships one).
+    // NVIDIA GPU (e.g. GTX 1060). CPU decode + scale, GPU encode via NVENC.
+    // This works with the stock Debian/Ubuntu ffmpeg build (which ships
+    // h264_nvenc but not always scale_cuda). Requires nvidia-container-
+    // toolkit + `runtime: nvidia` on the container so /dev/nvidia* is
+    // visible to ffmpeg. Encoding is the bottleneck, so this is still
+    // roughly 5–8× faster than libx264 veryfast on a Pascal card.
     return [
       ...preamble,
-      "-hwaccel",
-      "cuda",
-      "-hwaccel_output_format",
-      "cuda",
       "-i",
       opts.src,
-      // scale on the GPU to avoid a CPU round-trip
       "-vf",
-      `scale_cuda=-2:${opts.height}:format=yuv420p`,
+      `scale=-2:${opts.height}`,
       "-c:v",
       "h264_nvenc",
       "-preset",
@@ -441,15 +439,16 @@ function buildFfmpegArgs(opts: {
       opts.vBitrate,
       "-profile:v",
       "main",
+      "-pix_fmt",
+      "yuv420p",
       "-g",
       gop,
       "-keyint_min",
       gop,
-      "-sc_threshold",
-      "0",
       ...tail,
     ];
   }
+
 
   if (hw === "qsv") {
     // Intel iGPU QuickSync. Needs /dev/dri passthrough.
