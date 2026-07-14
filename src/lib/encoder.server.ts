@@ -681,6 +681,7 @@ function hashPath(p: string): string {
 export type EncoderStatus = {
   configured: boolean;
   available: boolean;
+  hwaccel: Hwaccel;
   lastScanAt: string | null;
   lastScanError: string | null;
   jobs: EncodingJob[];
@@ -694,11 +695,13 @@ export function getEncoderStatus(): EncoderStatus {
   return {
     configured: Boolean(process.env.INBOX_ROOT && process.env.MEDIA_ROOT),
     available: s.available,
+    hwaccel: getHwaccel(),
     lastScanAt: s.lastScanAt ? new Date(s.lastScanAt).toISOString() : null,
     lastScanError: s.lastScanError,
     jobs,
   };
 }
+
 
 export function clearFinishedJobs() {
   const s = getState();
