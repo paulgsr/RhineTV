@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Film, Search, Shield } from "lucide-react";
+import { Film, Search, Shield, Compass, Inbox } from "lucide-react";
+
 
 export function SiteHeader() {
   return (
@@ -22,14 +23,32 @@ export function SiteHeader() {
             Library
           </Link>
           <Link
+            to="/discover"
+            className="flex items-center gap-1 transition-colors hover:text-foreground"
+            activeProps={{ className: "text-foreground" }}
+          >
+            <Compass className="h-3.5 w-3.5" />
+            Discover
+          </Link>
+          <Link
+            to="/admin/requests"
+            className="flex items-center gap-1 transition-colors hover:text-foreground"
+            activeProps={{ className: "text-foreground" }}
+          >
+            <Inbox className="h-3.5 w-3.5" />
+            Requests
+          </Link>
+          <Link
             to="/admin"
             className="flex items-center gap-1 transition-colors hover:text-foreground"
             activeProps={{ className: "text-foreground" }}
+            activeOptions={{ exact: true }}
           >
             <Shield className="h-3.5 w-3.5" />
             Admin
           </Link>
         </nav>
+
         <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
           <Search className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Press / to search</span>

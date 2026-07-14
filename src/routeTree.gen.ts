@@ -9,11 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WatchMovieIdRouteImport } from './routes/watch.$movieId'
 import { Route as MoviesMovieIdRouteImport } from './routes/movies.$movieId'
+import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
 
+const DiscoverRoute = DiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -34,43 +41,81 @@ const MoviesMovieIdRoute = MoviesMovieIdRouteImport.update({
   path: '/movies/$movieId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRequestsRoute = AdminRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/discover': typeof DiscoverRoute
+  '/admin/requests': typeof AdminRequestsRoute
   '/movies/$movieId': typeof MoviesMovieIdRoute
   '/watch/$movieId': typeof WatchMovieIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/discover': typeof DiscoverRoute
+  '/admin/requests': typeof AdminRequestsRoute
   '/movies/$movieId': typeof MoviesMovieIdRoute
   '/watch/$movieId': typeof WatchMovieIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/discover': typeof DiscoverRoute
+  '/admin/requests': typeof AdminRequestsRoute
   '/movies/$movieId': typeof MoviesMovieIdRoute
   '/watch/$movieId': typeof WatchMovieIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/movies/$movieId' | '/watch/$movieId'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/discover'
+    | '/admin/requests'
+    | '/movies/$movieId'
+    | '/watch/$movieId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/movies/$movieId' | '/watch/$movieId'
-  id: '__root__' | '/' | '/admin' | '/movies/$movieId' | '/watch/$movieId'
+  to:
+    | '/'
+    | '/admin'
+    | '/discover'
+    | '/admin/requests'
+    | '/movies/$movieId'
+    | '/watch/$movieId'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/discover'
+    | '/admin/requests'
+    | '/movies/$movieId'
+    | '/watch/$movieId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  DiscoverRoute: typeof DiscoverRoute
   MoviesMovieIdRoute: typeof MoviesMovieIdRoute
   WatchMovieIdRoute: typeof WatchMovieIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/discover': {
+      id: '/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof DiscoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -99,15 +144,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoviesMovieIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/requests': {
+      id: '/admin/requests'
+      path: '/requests'
+      fullPath: '/admin/requests'
+      preLoaderRoute: typeof AdminRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminRequestsRoute: typeof AdminRequestsRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminRequestsRoute: AdminRequestsRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
+  DiscoverRoute: DiscoverRoute,
   MoviesMovieIdRoute: MoviesMovieIdRoute,
   WatchMovieIdRoute: WatchMovieIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
