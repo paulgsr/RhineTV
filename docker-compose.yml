@@ -19,15 +19,29 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOST: 0.0.0.0
-      # Add your runtime secrets here (or via env_file):
+      # Filesystem scanner — every folder under MEDIA_ROOT that contains
+      # `master.m3u8` becomes a movie in the library.
+      MEDIA_ROOT: /media
+      # URL your reverse proxy / static server exposes those HLS files at
+      # (must be reachable from the browser). If RhineTV itself serves /media,
+      # leave as-is; otherwise point at your nginx / caddy media host.
+      PUBLIC_MEDIA_BASE_URL: /media
+      # Optional: TMDB for auto-filled posters / overviews / runtime / genres.
       # TMDB_API_KEY: ${TMDB_API_KEY}
+      # Jellyseerr integration (drives Discover + Coming soon):
       # JELLYSEERR_URL: ${JELLYSEERR_URL}
       # JELLYSEERR_API_KEY: ${JELLYSEERR_API_KEY}
+    volumes:
+      # Mount your HLS-prepared movies read-only. The folder layout is:
+      #   /mnt/tank/media/hls/Inception (2010)/master.m3u8
+      #   /mnt/tank/media/hls/Sintel (2010)/master.m3u8
+      - /mnt/tank/media/hls:/media:ro
     # env_file:
     #   - .env
     labels:
       # Opt this container in to Watchtower updates
       com.centurylinklabs.watchtower.enable: "true"
+
 
   watchtower:
     image: containrrr/watchtower:latest
