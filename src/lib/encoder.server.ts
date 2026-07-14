@@ -319,57 +319,7 @@ async function encodeRendition(opts: {
   segSeconds: number;
   onProgressSec: (sec: number) => void;
 }): Promise<void> {
-  const gop = String(opts.segSeconds * 2);
-  const args = [
-    "-hide_banner",
-    "-loglevel",
-    "error",
-    "-progress",
-    "pipe:1",
-    "-nostats",
-    "-y",
-    "-i",
-    opts.src,
-    "-vf",
-    `scale=-2:${opts.height}`,
-    "-c:v",
-    "libx264",
-    "-profile:v",
-    "main",
-    "-preset",
-    "veryfast",
-    "-crf",
-    "20",
-    "-b:v",
-    opts.vBitrate,
-    "-maxrate",
-    opts.vBitrate,
-    "-bufsize",
-    opts.vBitrate,
-    "-pix_fmt",
-    "yuv420p",
-    "-g",
-    gop,
-    "-keyint_min",
-    gop,
-    "-sc_threshold",
-    "0",
-    "-c:a",
-    "aac",
-    "-b:a",
-    opts.aBitrate,
-    "-ac",
-    "2",
-    "-hls_time",
-    String(opts.segSeconds),
-    "-hls_playlist_type",
-    "vod",
-    "-hls_segment_filename",
-    path.join(opts.outDir, "seg%05d.ts"),
-    "-f",
-    "hls",
-    path.join(opts.outDir, "index.m3u8"),
-  ];
+  const args = buildFfmpegArgs(opts);
 
   const s = getState();
   return new Promise((resolve, reject) => {
@@ -381,6 +331,7 @@ async function encodeRendition(opts: {
       reject(e instanceof Error ? e : new Error(String(e)));
       return;
     }
+
     let errTail = "";
     proc.stdout.on("data", (d) => {
       // ffmpeg -progress emits "key=value" lines including out_time_ms=NNN
