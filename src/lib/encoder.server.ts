@@ -358,6 +358,191 @@ async function encodeRendition(opts: {
   });
 }
 
+// -------- ffmpeg command builder (per-hwaccel) --------
+
+type Hwaccel = "none" | "nvenc" | "qsv" | "vaapi";
+
+function getHwaccel(): Hwaccel {
+  const raw = (process.env.HWACCEL ?? "none").toLowerCase();
+  if (raw === "nvenc" || raw === "qsv" || raw === "vaapi") return raw;
+  return "none";
+}
+
+function buildFfmpegArgs(opts: {
+  src: string;
+  outDir: string;
+  height: number;
+  vBitrate: string;
+  aBitrate: string;
+  segSeconds: number;
+}): string[] {
+  const gop = String(opts.segSeconds * 2);
+  const hw = getHwaccel();
+
+  // Common tail: audio + HLS muxer.
+  const tail: string[] = [
+    "-c:a",
+    "aac",
+    "-b:a",
+    opts.aBitrate,
+    "-ac",
+    "2",
+    "-hls_time",
+    String(opts.segSeconds),
+    "-hls_playlist_type",
+    "vod",
+    "-hls_segment_filename",
+    path.join(opts.outDir, "seg%05d.ts"),
+    "-f",
+    "hls",
+    path.join(opts.outDir, "index.m3u8"),
+  ];
+
+  const preamble = [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-progress",
+    "pipe:1",
+    "-nostats",
+    "-y",
+  ];
+
+  if (hw === "nvenc") {
+    // GTX 1060 / any NVIDIA GPU: full GPU pipeline — decode on GPU, scale on
+    // GPU, encode with NVENC. Requires nvidia-container-toolkit + a Debian-
+    // based ffmpeg built with cuda / nvenc / scale_cuda (bookworm ships one).
+    return [
+      ...preamble,
+      "-hwaccel",
+      "cuda",
+      "-hwaccel_output_format",
+      "cuda",
+      "-i",
+      opts.src,
+      // scale on the GPU to avoid a CPU round-trip
+      "-vf",
+      `scale_cuda=-2:${opts.height}:format=yuv420p`,
+      "-c:v",
+      "h264_nvenc",
+      "-preset",
+      "p5", // p1 fastest .. p7 slowest; p5 = balanced
+      "-tune",
+      "hq",
+      "-rc",
+      "vbr",
+      "-cq",
+      "23",
+      "-b:v",
+      opts.vBitrate,
+      "-maxrate",
+      opts.vBitrate,
+      "-bufsize",
+      opts.vBitrate,
+      "-profile:v",
+      "main",
+      "-g",
+      gop,
+      "-keyint_min",
+      gop,
+      "-sc_threshold",
+      "0",
+      ...tail,
+    ];
+  }
+
+  if (hw === "qsv") {
+    // Intel iGPU QuickSync. Needs /dev/dri passthrough.
+    return [
+      ...preamble,
+      "-hwaccel",
+      "qsv",
+      "-hwaccel_output_format",
+      "qsv",
+      "-i",
+      opts.src,
+      "-vf",
+      `vpp_qsv=w=-2:h=${opts.height}`,
+      "-c:v",
+      "h264_qsv",
+      "-preset",
+      "medium",
+      "-global_quality",
+      "23",
+      "-b:v",
+      opts.vBitrate,
+      "-maxrate",
+      opts.vBitrate,
+      "-bufsize",
+      opts.vBitrate,
+      "-g",
+      gop,
+      ...tail,
+    ];
+  }
+
+  if (hw === "vaapi") {
+    // AMD / Intel via VA-API. Needs /dev/dri passthrough.
+    return [
+      ...preamble,
+      "-hwaccel",
+      "vaapi",
+      "-hwaccel_device",
+      "/dev/dri/renderD128",
+      "-hwaccel_output_format",
+      "vaapi",
+      "-i",
+      opts.src,
+      "-vf",
+      `scale_vaapi=w=-2:h=${opts.height}:format=nv12`,
+      "-c:v",
+      "h264_vaapi",
+      "-b:v",
+      opts.vBitrate,
+      "-maxrate",
+      opts.vBitrate,
+      "-bufsize",
+      opts.vBitrate,
+      "-g",
+      gop,
+      ...tail,
+    ];
+  }
+
+  // CPU fallback (libx264).
+  return [
+    ...preamble,
+    "-i",
+    opts.src,
+    "-vf",
+    `scale=-2:${opts.height}`,
+    "-c:v",
+    "libx264",
+    "-profile:v",
+    "main",
+    "-preset",
+    "veryfast",
+    "-crf",
+    "20",
+    "-b:v",
+    opts.vBitrate,
+    "-maxrate",
+    opts.vBitrate,
+    "-bufsize",
+    opts.vBitrate,
+    "-pix_fmt",
+    "yuv420p",
+    "-g",
+    gop,
+    "-keyint_min",
+    gop,
+    "-sc_threshold",
+    "0",
+    ...tail,
+  ];
+}
+
+
 async function writeMaster(masterPath: string, renditions: string[]) {
   const lines = ["#EXTM3U", "#EXT-X-VERSION:3"];
   for (const r of renditions) {
