@@ -16,13 +16,22 @@ export function MovieCard({ movie }: { movie: Movie }) {
       params={{ movieId: movie.id }}
       className="group relative flex flex-col overflow-hidden rounded-lg bg-card ring-1 ring-border/50 transition hover:ring-primary/60"
     >
-      <div className="relative aspect-[2/3] w-full overflow-hidden bg-muted">
+      <div className="relative aspect-[2/3] w-full overflow-hidden bg-gradient-to-br from-muted to-background">
         <img
           src={movie.posterUrl}
           alt={`${movie.title} poster`}
           loading="lazy"
+          onError={(e) => {
+            const img = e.currentTarget;
+            img.style.display = "none";
+          }}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
+        <div className="pointer-events-none absolute inset-0 flex items-end p-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+            {movie.title}
+          </span>
+        </div>
         {pct > 2 && (
           <div className="absolute inset-x-0 bottom-0 h-1 bg-black/50">
             <div
@@ -32,6 +41,7 @@ export function MovieCard({ movie }: { movie: Movie }) {
           </div>
         )}
       </div>
+
       <div className="flex flex-col gap-0.5 px-3 py-2">
         <h3 className="truncate text-sm font-medium text-foreground">
           {movie.title}
