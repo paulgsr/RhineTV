@@ -319,8 +319,86 @@ async function encodeRendition(opts: {
   segSeconds: number;
   onProgressSec: (sec: number) => void;
 }): Promise<void> {
+  const args = buildFfmpegArgs(opts);
+
+  const s = getState();
+  return new Promise((resolve, reject) => {
+    let proc;
+    try {
+      proc = spawn("ffmpeg", args);
+    } catch (e) {
+      s.available = false;
+      reject(e instanceof Error ? e : new Error(String(e)));
+      return;
+    }
+
+    let errTail = "";
+    proc.stdout.on("data", (d) => {
+      // ffmpeg -progress emits "key=value" lines including out_time_ms=NNN
+      const s2 = d.toString();
+      const m = s2.match(/out_time_ms=(\d+)/g);
+      if (m) {
+        const last = m[m.length - 1];
+        const us = Number(last.split("=")[1]);
+        opts.onProgressSec(us / 1_000_000);
+      }
+    });
+    proc.stderr.on("data", (d) => {
+      errTail = (errTail + d.toString()).slice(-500);
+    });
+    proc.on("error", (e) => {
+      s.available = false;
+      reject(new Error(`ffmpeg failed to spawn: ${e.message}`));
+    });
+    proc.on("close", (code) => {
+      if (code !== 0)
+        return reject(new Error(`ffmpeg exited ${code}: ${errTail}`));
+      resolve();
+    });
+  });
+}
+
+// -------- ffmpeg command builder (per-hwaccel) --------
+
+type Hwaccel = "none" | "nvenc" | "qsv" | "vaapi";
+
+function getHwaccel(): Hwaccel {
+  const raw = (process.env.HWACCEL ?? "none").toLowerCase();
+  if (raw === "nvenc" || raw === "qsv" || raw === "vaapi") return raw;
+  return "none";
+}
+
+function buildFfmpegArgs(opts: {
+  src: string;
+  outDir: string;
+  height: number;
+  vBitrate: string;
+  aBitrate: string;
+  segSeconds: number;
+}): string[] {
   const gop = String(opts.segSeconds * 2);
-  const args = [
+  const hw = getHwaccel();
+
+  // Common tail: audio + HLS muxer.
+  const tail: string[] = [
+    "-c:a",
+    "aac",
+    "-b:a",
+    opts.aBitrate,
+    "-ac",
+    "2",
+    "-hls_time",
+    String(opts.segSeconds),
+    "-hls_playlist_type",
+    "vod",
+    "-hls_segment_filename",
+    path.join(opts.outDir, "seg%05d.ts"),
+    "-f",
+    "hls",
+    path.join(opts.outDir, "index.m3u8"),
+  ];
+
+  const preamble = [
     "-hide_banner",
     "-loglevel",
     "error",
@@ -328,6 +406,111 @@ async function encodeRendition(opts: {
     "pipe:1",
     "-nostats",
     "-y",
+  ];
+
+  if (hw === "nvenc") {
+    // NVIDIA GPU (e.g. GTX 1060). CPU decode + scale, GPU encode via NVENC.
+    // This works with the stock Debian/Ubuntu ffmpeg build (which ships
+    // h264_nvenc but not always scale_cuda). Requires nvidia-container-
+    // toolkit + `runtime: nvidia` on the container so /dev/nvidia* is
+    // visible to ffmpeg. Encoding is the bottleneck, so this is still
+    // roughly 5–8× faster than libx264 veryfast on a Pascal card.
+    return [
+      ...preamble,
+      "-i",
+      opts.src,
+      "-vf",
+      `scale=-2:${opts.height}`,
+      "-c:v",
+      "h264_nvenc",
+      "-preset",
+      "p5", // p1 fastest .. p7 slowest; p5 = balanced
+      "-tune",
+      "hq",
+      "-rc",
+      "vbr",
+      "-cq",
+      "23",
+      "-b:v",
+      opts.vBitrate,
+      "-maxrate",
+      opts.vBitrate,
+      "-bufsize",
+      opts.vBitrate,
+      "-profile:v",
+      "main",
+      "-pix_fmt",
+      "yuv420p",
+      "-g",
+      gop,
+      "-keyint_min",
+      gop,
+      ...tail,
+    ];
+  }
+
+
+  if (hw === "qsv") {
+    // Intel iGPU QuickSync. Needs /dev/dri passthrough.
+    return [
+      ...preamble,
+      "-hwaccel",
+      "qsv",
+      "-hwaccel_output_format",
+      "qsv",
+      "-i",
+      opts.src,
+      "-vf",
+      `vpp_qsv=w=-2:h=${opts.height}`,
+      "-c:v",
+      "h264_qsv",
+      "-preset",
+      "medium",
+      "-global_quality",
+      "23",
+      "-b:v",
+      opts.vBitrate,
+      "-maxrate",
+      opts.vBitrate,
+      "-bufsize",
+      opts.vBitrate,
+      "-g",
+      gop,
+      ...tail,
+    ];
+  }
+
+  if (hw === "vaapi") {
+    // AMD / Intel via VA-API. Needs /dev/dri passthrough.
+    return [
+      ...preamble,
+      "-hwaccel",
+      "vaapi",
+      "-hwaccel_device",
+      "/dev/dri/renderD128",
+      "-hwaccel_output_format",
+      "vaapi",
+      "-i",
+      opts.src,
+      "-vf",
+      `scale_vaapi=w=-2:h=${opts.height}:format=nv12`,
+      "-c:v",
+      "h264_vaapi",
+      "-b:v",
+      opts.vBitrate,
+      "-maxrate",
+      opts.vBitrate,
+      "-bufsize",
+      opts.vBitrate,
+      "-g",
+      gop,
+      ...tail,
+    ];
+  }
+
+  // CPU fallback (libx264).
+  return [
+    ...preamble,
     "-i",
     opts.src,
     "-vf",
@@ -354,58 +537,10 @@ async function encodeRendition(opts: {
     gop,
     "-sc_threshold",
     "0",
-    "-c:a",
-    "aac",
-    "-b:a",
-    opts.aBitrate,
-    "-ac",
-    "2",
-    "-hls_time",
-    String(opts.segSeconds),
-    "-hls_playlist_type",
-    "vod",
-    "-hls_segment_filename",
-    path.join(opts.outDir, "seg%05d.ts"),
-    "-f",
-    "hls",
-    path.join(opts.outDir, "index.m3u8"),
+    ...tail,
   ];
-
-  const s = getState();
-  return new Promise((resolve, reject) => {
-    let proc;
-    try {
-      proc = spawn("ffmpeg", args);
-    } catch (e) {
-      s.available = false;
-      reject(e instanceof Error ? e : new Error(String(e)));
-      return;
-    }
-    let errTail = "";
-    proc.stdout.on("data", (d) => {
-      // ffmpeg -progress emits "key=value" lines including out_time_ms=NNN
-      const s2 = d.toString();
-      const m = s2.match(/out_time_ms=(\d+)/g);
-      if (m) {
-        const last = m[m.length - 1];
-        const us = Number(last.split("=")[1]);
-        opts.onProgressSec(us / 1_000_000);
-      }
-    });
-    proc.stderr.on("data", (d) => {
-      errTail = (errTail + d.toString()).slice(-500);
-    });
-    proc.on("error", (e) => {
-      s.available = false;
-      reject(new Error(`ffmpeg failed to spawn: ${e.message}`));
-    });
-    proc.on("close", (code) => {
-      if (code !== 0)
-        return reject(new Error(`ffmpeg exited ${code}: ${errTail}`));
-      resolve();
-    });
-  });
 }
+
 
 async function writeMaster(masterPath: string, renditions: string[]) {
   const lines = ["#EXTM3U", "#EXT-X-VERSION:3"];
@@ -546,6 +681,7 @@ function hashPath(p: string): string {
 export type EncoderStatus = {
   configured: boolean;
   available: boolean;
+  hwaccel: Hwaccel;
   lastScanAt: string | null;
   lastScanError: string | null;
   jobs: EncodingJob[];
@@ -559,11 +695,13 @@ export function getEncoderStatus(): EncoderStatus {
   return {
     configured: Boolean(process.env.INBOX_ROOT && process.env.MEDIA_ROOT),
     available: s.available,
+    hwaccel: getHwaccel(),
     lastScanAt: s.lastScanAt ? new Date(s.lastScanAt).toISOString() : null,
     lastScanError: s.lastScanError,
     jobs,
   };
 }
+
 
 export function clearFinishedJobs() {
   const s = getState();

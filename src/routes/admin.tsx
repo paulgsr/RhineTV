@@ -204,11 +204,26 @@ function EncoderPanel() {
     <section className="mt-10 rounded-lg border border-border/60 bg-card p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">Auto-encoder</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            Auto-encoder
+            <span
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+                status.hwaccel === "nvenc"
+                  ? "bg-emerald-500/15 text-emerald-300"
+                  : status.hwaccel === "qsv" || status.hwaccel === "vaapi"
+                    ? "bg-sky-500/15 text-sky-300"
+                    : "bg-muted text-muted-foreground"
+              }`}
+              title="Set the HWACCEL env var to change"
+            >
+              {status.hwaccel === "none" ? "CPU (libx264)" : status.hwaccel}
+            </span>
+          </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Drop a video file into <code className="rounded bg-muted px-1">$INBOX_ROOT</code>{" "}
             and it's re-encoded to HLS and added to the library automatically.
           </p>
+
         </div>
         <div className="flex gap-2">
           <button

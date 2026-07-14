@@ -18,16 +18,21 @@ ENV NODE_ENV=production
 RUN bun run build
 
 # ---------- runtime ----------
-FROM node:20-alpine AS runtime
+# Debian (not Alpine) because its ffmpeg package is built with h264_nvenc /
+# h264_qsv / h264_vaapi — we need those for GPU-accelerated transcoding.
+FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
 
 # ffmpeg + ffprobe power the auto-encoder worker (src/lib/encoder.server.ts).
-# Without these the "auto-encode inbox" feature disables itself gracefully.
-RUN apk add --no-cache ffmpeg
-
+# Also install wget for the HEALTHCHECK. `--no-install-recommends` keeps the
+# image lean; ffmpeg on bookworm includes CPU (libx264), NVIDIA (h264_nvenc),
+# Intel (h264_qsv), and AMD/Intel VA-API (h264_vaapi) encoders.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ffmpeg wget ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 # Copy the Nitro node-server output. Everything the server needs is bundled
 # inside .output; we don't ship node_modules or source.
@@ -40,3 +45,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
 
 CMD ["node", ".output/server/index.mjs"]
+
