@@ -1,9 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import type { Movie } from "@/data/library";
 import { getProgress, watchedFraction } from "@/lib/progress";
 import { useEffect, useState } from "react";
 
-export function MovieCard({ movie }: { movie: Movie }) {
+export type MovieCardData = {
+  id: string;
+  title: string;
+  year: number | null;
+  runtimeMin: number | null;
+  posterUrl: string | null;
+};
+
+export function MovieCard({ movie }: { movie: MovieCardData }) {
+
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
