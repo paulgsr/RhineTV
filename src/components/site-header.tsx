@@ -2,12 +2,18 @@ import { Link } from "@tanstack/react-router";
 import { Film, Search, Shield, Compass, Inbox, Menu, X } from "lucide-react";
 import { useState } from "react";
 
-const navLinks = [
+const navLinks: Array<{
+  to: "/" | "/discover" | "/admin/requests" | "/admin";
+  label: string;
+  icon: typeof Compass | null;
+  exact?: boolean;
+}> = [
   { to: "/", label: "Library", icon: null, exact: true },
   { to: "/discover", label: "Discover", icon: Compass },
   { to: "/admin/requests", label: "Requests", icon: Inbox },
   { to: "/admin", label: "Admin", icon: Shield, exact: true },
-] as const;
+];
+
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
